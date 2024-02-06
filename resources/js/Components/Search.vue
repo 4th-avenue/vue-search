@@ -1,14 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watchEffect } from 'vue'
 import {
     TransitionRoot,
     TransitionChild,
     Dialog,
     DialogPanel,
     DialogTitle,
-} from '@headlessui/vue'
+} from '@headlessui/vue';
+import Meilisearch from "meilisearch";
 
-const isOpen = ref(true)
+const isOpen = ref(false);
+const query = ref("");
+const client = ref(null);
+const results = ref(null);
+const selectedHitIndex = ref(0);
 
 function closeModal() {
     isOpen.value = false
@@ -16,6 +21,21 @@ function closeModal() {
 function openModal() {
     isOpen.value = true
 }
+
+onMounted(() => {
+    client.value = new Meilisearch({host: "http://localhost:7700"});
+});
+
+const search = async (query) => {
+    if(query) {
+        results.value = await client.value.index('posts').search(query);
+        console.log(results.value);
+    }
+};
+
+watchEffect(() => {
+    search(query.value);
+});
 </script>
 
 <template>
