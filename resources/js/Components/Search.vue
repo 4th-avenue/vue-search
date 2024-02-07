@@ -16,10 +16,13 @@ const results = ref(null);
 const selectedHitIndex = ref(0);
 
 function closeModal() {
-    isOpen.value = false
+    isOpen.value = false;
+    query.value = "";
+    results.value = null;
+    selectedHitIndex.value = 0;
 }
 function openModal() {
-    isOpen.value = true
+    isOpen.value = true;
 }
 
 onMounted(() => {
@@ -29,13 +32,34 @@ onMounted(() => {
 const search = async (query) => {
     if(query) {
         results.value = await client.value.index('posts').search(query, {limit: 8});
-        console.log(results.value);
     }
 };
 
 watchEffect(() => {
     search(query.value);
 });
+
+function focusPreviousHits() {
+    if(selectedHitIndex.value === 0) {
+        selectedHitIndex.value = results.value.hits.length - 1;
+    } else {
+        selectedHitIndex.value--;
+    }
+}
+
+function focusNextHits() {
+    if(selectedHitIndex.value < results.value.hits.length - 1) {
+        selectedHitIndex.value++;
+    } else {
+        selectedHitIndex.value = 0;
+    }
+}
+
+function onHitEnter() {
+    const hit = results.value.hits[selectedHitIndex.value];
+    window.location = `/articles/${hit.id}`;
+    closeModal();
+}
 </script>
 
 <template>
@@ -54,11 +78,11 @@ watchEffect(() => {
                 <div class="flex min-h-full items-center justify-center p-4 text-center">
                     <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
                         <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                            <input type="search" v-model="query" class="w-full border-none block rounded-md" />
+                            <input type="search" v-model="query" class="w-full border-none block rounded-md" @keydown.up="focusPreviousHits()" @keydown.down="focusNextHits()" @keyup.enter="onHitEnter" />
                             <template v-if="results">
                                 Found
                                 <span v-text="results.estimatedTotalHits"></span> result(s)
-                                <a v-for="(hit, index) in results.hits" :key="index" :href="`/articles/${hit.id}`" class="block w-full py-2 px-3 border-b border-slate-200">
+                                <a v-for="(hit, index) in results.hits" :key="index" :href="`/articles/${hit.id}`" class="block w-full py-2 px-3 border-b border-slate-200 rounded-md" :class="{'bg-blue-300': index === selectedHitIndex}">
                                     <h1>{{ hit.title }}</h1>
                                 </a>
                             </template>
