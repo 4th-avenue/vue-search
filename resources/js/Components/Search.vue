@@ -27,6 +27,7 @@ function openModal() {
 
 onMounted(() => {
     client.value = new Meilisearch({host: "http://localhost:7700"});
+    window.addEventListener("keydown", onKeydown);
 });
 
 const search = async (query) => {
@@ -60,6 +61,13 @@ function onHitEnter() {
     window.location = `/articles/${hit.id}`;
     closeModal();
 }
+
+const onKeydown = (e) => {
+    if(isOpen.value) return;
+    if((e.metaKey || e.altKey) && e.key === "k") {
+        isOpen.value = true;
+    }
+};
 </script>
 
 <template>
